@@ -2,3 +2,4 @@ python-docx
 pandas
 numpy
 jieba
+openpyxl
