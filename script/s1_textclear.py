@@ -15,7 +15,7 @@ keywords = ["数据跨境", "数据流动", "数据共享"]
 ######################################################################################################
 
 # 定义文件路径
-base_path = "D:\\py_proj\\policy_analyse"
+base_path = "……………………"
 pool_path = os.path.join(base_path, "pool")
 output_path = os.path.join(base_path, "output", "policy_list.xlsx")
 stopword_path = os.path.join(base_path, "files", "stopword.txt")
@@ -127,19 +127,26 @@ df['政策级别'] = df.apply(
     axis=1
 )
 
-df['citycode'].replace(0, np.nan, inplace=True)
-df['provcode'].replace(0, np.nan, inplace=True)
+#df['citycode'].replace(0, np.nan, inplace=True)
+#df['provcode'].replace(0, np.nan, inplace=True)
+df['citycode'] = df['citycode'].replace(0, np.nan)
+df['provcode'] = df['provcode'].replace(0, np.nan)
+
 
 # 删除第{len(keywords)+6}列和第{len(keywords)+7}列
 del df[df.columns[len(keywords) + 5]]
 del df[df.columns[len(keywords) + 5]]
 
-# 复制citycode到provcode的操作
+# Convert 'provcode' to string type to avoid dtype warnings
+df['provcode'] = df['provcode'].astype(str)
+
+# Iterate over rows and update 'provcode' based on 'citycode'
 for index, row in df.iterrows():
-    if pd.isna(row['provcode']):
+    if pd.isna(row['provcode']) or row['provcode'] == 'nan':
         citycode_str = str(row['citycode'])
         if citycode_str and len(citycode_str) >= 2:
             df.at[index, 'provcode'] = citycode_str[:2] + '0000'
+
 
 # 保存到Excel文件
 os.makedirs(os.path.dirname(output_path), exist_ok=True)
