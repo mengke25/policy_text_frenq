@@ -40,8 +40,3 @@ def provcode(df, prov_variable):
     
     return df
 
-# 示例用法
-data = {'city': ['北京', '天津', '石家庄', '上海']}
-df = pd.DataFrame(data)
-df = provcode(df, 'city')
-print(df)
