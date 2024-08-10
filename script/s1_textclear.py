@@ -28,7 +28,6 @@ jieba.load_userdict(custom_dict_path)
 with open(stopword_path, 'r', encoding='utf-8') as f:
     stopwords = set(f.read().strip().split())
 
-
 ################################################################################################
 def clean_text(text):
     # 移除无效字符
@@ -44,7 +43,6 @@ def extract_year_from_text(text):
 def extract_year_from_filename(filename):
     year = extract_year_from_text(filename)
     return year
-
 
 ################################################################################################
 # 步骤一：将txt文件转换为docx文件
@@ -84,36 +82,40 @@ for root, dirs, files in os.walk(pool_path):
             docx_files.append(os.path.join(root, file))
 
 for i, docx_path in enumerate(docx_files, start=1):
-    doc = Document(docx_path)
-    content = "\n".join([para.text for para in doc.paragraphs])
+    try:
+        doc = Document(docx_path)
+        content = "\n".join([para.text for para in doc.paragraphs])
 
-    # 从文件名提取年份
-    year = extract_year_from_filename(os.path.basename(docx_path))
-    if not year:
-        # 从内容中提取年份
-        year = extract_year_from_text(content)
+        # 从文件名提取年份
+        year = extract_year_from_filename(os.path.basename(docx_path))
+        if not year:
+            # 从内容中提取年份
+            year = extract_year_from_text(content)
 
-    # 计算总词数（排除停用词）
-    words = jieba.lcut(content)
-    words_filtered = [word for word in words if word not in stopwords]
-    total_word_count = len(words_filtered)
+        # 计算总词数（排除停用词）
+        words = jieba.lcut(content)
+        words_filtered = [word for word in words if word not in stopwords]
+        total_word_count = len(words_filtered)
 
-    # 计算关键词出现频次
-    keyword_counts = {kw: content.count(kw) for kw in keywords}
+        # 计算关键词出现频次
+        keyword_counts = {kw: content.count(kw) for kw in keywords}
 
-    # 获取文件的相对路径（相对于 pool_path）
-    relative_path = os.path.relpath(docx_path, pool_path)
-    folder_name = os.path.dirname(relative_path)  # 获取文件所在的子文件夹
+        # 获取文件的相对路径（相对于 pool_path）
+        relative_path = os.path.relpath(docx_path, pool_path)
+        folder_name = os.path.dirname(relative_path)  # 获取文件所在的子文件夹
 
-    # 添加到数据列表
-    data.append([
-        os.path.basename(docx_path),
-        year,
-        total_word_count,
-        *keyword_counts.values(),
-        folder_name
-    ])
-    print(f"正在处理docx文件 {i}/{len(docx_files)} 已完成 {i/len(docx_files)*100:.2f}%")
+        # 添加到数据列表
+        data.append([
+            os.path.basename(docx_path),
+            year,
+            total_word_count,
+            *keyword_counts.values(),
+            folder_name
+        ])
+        print(f"正在处理docx文件 {i}/{len(docx_files)} 已完成 {i/len(docx_files)*100:.2f}%")
+    
+    except Exception as e:
+        print(f"跳过有问题的docx文件: {docx_path}，错误: {e}")
 
 # 创建DataFrame
 columns = ["文件名", "年份", "总词数"] + keywords + ["文件来源"]
@@ -151,7 +153,6 @@ df['provcode'] = df.apply(lambda row: int(str(row['citycode'])[:2]) * 10000 if n
 df['政策级别'] = df.apply(lambda row: "市级政策" if not pd.isna(row['citycode']) else 
                                       ("省级政策" if pd.isna(row['citycode']) and not pd.isna(row['provcode']) else "未匹配"), axis=1)
 df.loc[df['provcode'].isin([310000, 110000, 120000, 500000]), '政策级别'] = "直辖市政策"
-
 
 df = code_to_city(df, 'citycode')
 df = code_to_prov(df, 'provcode')
